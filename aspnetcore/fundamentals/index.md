@@ -1,136 +1,282 @@
 ---
 title: ASP.NET Core fundamentals
 author: rick-anderson
-description: This article provides a high-level overview of the foundational concepts to be understood when building ASP.NET Core applications.
-keywords: ASP.NET Core,fundamentals,overview
+description: Learn the foundational concepts for building ASP.NET Core apps.
+monikerRange: '>= aspnetcore-2.1'
 ms.author: riande
-manager: wpickett
-ms.date: 08/18/2017
-ms.topic: get-started-article
-ms.assetid: a19b7836-63e4-44e8-8250-50d426dd1070
-ms.technology: aspnet
-ms.prod: asp.net-core
+ms.custom: mvc
+ms.date: 03/31/2019
 uid: fundamentals/index
-ms.custom: H1Hack27Feb2017
 ---
+# ASP.NET Core fundamentals
 
-# ASP.NET Core fundamentals overview
+This article is an overview of key topics for understanding how to develop ASP.NET Core apps.
 
-An ASP.NET Core application is a console app that creates a web server in its `Main` method:
+## The Startup class
 
-# [ASP.NET Core 2.x](#tab/aspnetcore2x)
+The `Startup` class is where:
 
-[!code-csharp[Main](../getting-started/sample/aspnetcoreapp/Program2x.cs)]
+* Any services required by the app are configured.
+* The request handling pipeline is defined.
 
-The `Main` method invokes `WebHost.CreateDefaultBuilder`, which follows the builder pattern to create a web application host. The builder has methods that define the web server (for example, `UseKestrel`) and the startup class (`UseStartup`). In the preceding example, a [Kestrel](xref:fundamentals/servers/kestrel) web server is automatically allocated. ASP.NET Core's web host will attempt to run on IIS, if it is available. Other web servers, such as [HTTP.sys](xref:fundamentals/servers/httpsys), can be used by invoking the appropriate extension method. `UseStartup` is explained further in the next section.
+* Code to configure (or *register*) services is added to the `Startup.ConfigureServices` method. *Services* are components that are used by the app. For example, an Entity Framework Core context object is a service.
+* Code to configure the request handling pipeline is added to the `Startup.Configure` method. The pipeline is composed as a series of *middleware* components. For example, a middleware might handle requests for static files or redirect HTTP requests to HTTPS. Each middleware performs asynchronous operations on an `HttpContext` and then either invokes the next middleware in the pipeline or terminates the request.
 
-`IWebHostBuilder`, the return type of the `WebHost.CreateDefaultBuilder` invocation, provides many optional methods. Some of these methods include `UseHttpSys` for hosting the application in HTTP.sys, and `UseContentRoot` for specifying the root content directory. The `Build` and `Run` methods build the `IWebHost` object that will host the application and begin listening for HTTP requests.
+Here's a sample `Startup` class:
 
-# [ASP.NET Core 1.x](#tab/aspnetcore1x)
+[!code-csharp[](index/snapshots/2.x/Startup1.cs?highlight=3,12)]
 
-[!code-csharp[Main](../getting-started/sample/aspnetcoreapp/Program.cs)]
+For more information, see <xref:fundamentals/startup>.
 
-The `Main` method uses `WebHostBuilder`, which follows the builder pattern to create a web application host. The builder has methods that define the web server (for example, `UseKestrel`) and the startup class (`UseStartup`). In the preceding example, the [Kestrel](xref:fundamentals/servers/kestrel) web server is used. Other web servers, such as [WebListener](xref:fundamentals/servers/weblistener), can be used by invoking the appropriate extension method. `UseStartup` is explained further in the next section.
+## Dependency injection (services)
 
-`WebHostBuilder` provides many optional methods, including `UseIISIntegration` for hosting in IIS and IIS Express, and `UseContentRoot` for specifying the root content directory. The `Build` and `Run` methods build the `IWebHost` object that will host the application and begin listening for HTTP requests.
+ASP.NET Core has a built-in dependency injection (DI) framework that makes configured services available to an app's classes. One way to get an instance of a service in a class is to create a constructor with a parameter of the required type. The parameter can be the service type or an interface. The DI system provides the service at runtime.
 
----
+Here's a class that uses DI to get an Entity Framework Core context object. The highlighted line is an example of constructor injection:
 
-## Startup
+[!code-csharp[](index/snapshots/2.x/Index.cshtml.cs?highlight=5)]
 
-The `UseStartup` method on `WebHostBuilder` specifies the `Startup` class for your app:
+While DI is built in, it's designed to let you plug in a third-party Inversion of Control (IoC) container if you prefer.
 
-# [ASP.NET Core 2.x](#tab/aspnetcore2x)
-
-[!code-csharp[Main](../getting-started/sample/aspnetcoreapp/Program2x.cs?highlight=10&range=6-17)]
-
-# [ASP.NET Core 1.x](#tab/aspnetcore1x)
-
-[!code-csharp[Main](../getting-started/sample/aspnetcoreapp/Program.cs?highlight=7&range=6-17)]
-
----
-
-The `Startup` class is where you define the request handling pipeline and where any services needed by the application are configured. The `Startup` class must be public and contain the following methods:
-
-```csharp
-public class Startup
-{
-    // This method gets called by the runtime. Use this method to add services to the container.
-    public void ConfigureServices(IServiceCollection services)
-    {
-    }
-
-    // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-    public void Configure(IApplicationBuilder app)
-    {
-    }
-}
-```
-
-* `ConfigureServices` defines the [Services](#services) used by your application (such as ASP.NET Core MVC, Entity Framework Core, Identity, etc.).
-
-* `Configure` defines the [middleware](xref:fundamentals/middleware) in the request pipeline.
-
-For more information, see [Application startup](xref:fundamentals/startup).
-
-## Services
-
-A service is a component that is intended for common consumption in an application. Services are made available through [dependency injection](xref:fundamentals/dependency-injection) (DI). ASP.NET Core includes a native inversion of control (IoC) container that supports [constructor injection](xref:mvc/controllers/dependency-injection#constructor-injection) by default. The native container can be replaced with your container of choice. In addition to its loose coupling benefit, DI makes services available throughout your application. For example, [logging](xref:fundamentals/logging) is available throughout your application.
-
-For more information, see [Dependency injection](xref:fundamentals/dependency-injection).
+For more information, see <xref:fundamentals/dependency-injection>.
 
 ## Middleware
 
-In ASP.NET Core, you compose your request pipeline using [Middleware](xref:fundamentals/middleware). ASP.NET Core middleware performs asynchronous logic on an `HttpContext` and then either invokes the next middleware in the sequence or terminates the request directly. A middleware component called "XYZ" is added by invoking a `UseXYZ` extension method in the `Configure` method.
+The request handling pipeline is composed as a series of middleware components. Each component performs asynchronous operations on an `HttpContext` and then either invokes the next middleware in the pipeline or terminates the request.
 
-ASP.NET Core comes with a rich set of built-in middleware:
+By convention, a middleware component is added to the pipeline by invoking its `Use...` extension method in the `Startup.Configure` method. For example, to enable rendering of static files, call `UseStaticFiles`.
 
-* [Static files](xref:fundamentals/static-files)
+The highlighted code in the following example configures the request handling pipeline:
 
-* [Routing](xref:fundamentals/routing)
+[!code-csharp[](index/snapshots/2.x/Startup1.cs?highlight=14-16)]
 
-* [Authentication](xref:security/authentication/index)
+ASP.NET Core includes a rich set of built-in middleware, and you can write custom middleware.
 
-You can use any [OWIN](http://owin.org)-based middleware with ASP.NET Core, and you can write your own custom middleware.
+For more information, see <xref:fundamentals/middleware/index>.
 
-For more information, see [Middleware](xref:fundamentals/middleware) and [Open Web Interface for .NET (OWIN)](xref:fundamentals/owin).
+<a id="host"/>
+
+## The host
+
+An ASP.NET Core app builds a *host* on startup. The host is an object that encapsulates all of the app's resources, such as:
+
+* An HTTP server implementation
+* Middleware components
+* Logging
+* DI
+* Configuration
+
+The main reason for including all of the app's interdependent resources in one object is lifetime management: control over app startup and graceful shutdown.
+
+The code to create a host is in `Program.Main` and follows the [builder pattern](https://wikipedia.org/wiki/Builder_pattern). Methods are called to configure each resource that is part of the host. A builder method is called to pull it all together and instantiate the host object.
+
+::: moniker range=">= aspnetcore-3.0"
+
+In ASP.NET Core 3.0 or later, Generic Host (`Host` class) or Web Host (`WebHost` class) can be used in a web app. Generic Host is recommended, and Web Host is available for backwards compatibility.
+
+The framework provides the `CreateDefaultBuilder` and `ConfigureWebHostDefaults` methods to set up a host with commonly used options, such as the following:
+
+* Use [Kestrel](#servers) as the web server and enable IIS integration.
+* Load configuration from *appsettings.json*, *appsettings.{Environment Name}.json*, environment variables, command line arguments, and other configuration sources.
+* Send logging output to the console and debug providers.
+
+Here's sample code that builds a host. The methods that set up the host with commonly used options are highlighted:
+
+[!code-csharp[](index/snapshots/3.x/Program1.cs?highlight=9-10)]
+
+For more information, see <xref:fundamentals/host/generic-host> and <xref:fundamentals/host/web-host>.
+
+::: moniker-end
+
+::: moniker range="< aspnetcore-3.0"
+
+ASP.NET Core 2.x uses Web Host (`WebHost` class) for web apps. The framework provides `CreateDefaultBuilder` to set up a host with commonly used options, such as the following:
+
+* Use [Kestrel](#servers) as the web server and enable IIS integration.
+* Load configuration from *appsettings.json*, *appsettings.{Environment Name}.json*, environment variables, command line arguments, and other configuration sources.
+* Send logging output to the console and debug providers.
+
+Here's sample code that builds a host:
+
+[!code-csharp[](index/snapshots/2.x/Program1.cs?highlight=9)]
+
+For more information, see <xref:fundamentals/host/web-host>.
+
+::: moniker-end
+
+### Advanced host scenarios
+
+::: moniker range=">= aspnetcore-3.0"
+
+Generic Host is available for any .NET Core app to use&mdash;not just ASP.NET Core apps. Generic Host (`Host` class) allows other types of apps to use cross-cutting framework extensions, such as logging, DI, configuration, and app lifetime management. For more information, see <xref:fundamentals/host/generic-host>.
+
+::: moniker-end
+
+::: moniker range="< aspnetcore-3.0"
+
+Web Host is designed to include an HTTP server implementation, which isn't required for other kinds of .NET apps. Starting in ASP.NET Core 2.1, the Generic Host (`Host` class) is available for any .NET Core app to use&mdash;not just ASP.NET Core apps. Generic Host allows other types of apps to use cross-cutting framework extensions, such as logging, DI, configuration, and app lifetime management. For more information, see <xref:fundamentals/host/generic-host>.
+
+::: moniker-end
+
+You can also use the host to run background tasks. For more information, see <xref:fundamentals/host/hosted-services>.
 
 ## Servers
 
-The ASP.NET Core hosting model does not directly listen for requests; rather, it relies on an HTTP server implementation to forward the request to the application. The forwarded request is wrapped as a set of feature objects that you can access through interfaces. The application composes this set into an `HttpContext`. ASP.NET Core includes a managed, cross-platform web server, called [Kestrel](xref:fundamentals/servers/kestrel). Kestrel is typically run behind a production web server like [IIS](https://iis.net) or [nginx](http://nginx.org).
+An ASP.NET Core app uses an HTTP server implementation to listen for HTTP requests. The server surfaces requests to the app as a set of [request features](xref:fundamentals/request-features) composed into an `HttpContext`.
 
-For more information, see [Servers](xref:fundamentals/servers/index) and [Hosting](xref:fundamentals/hosting).
+::: moniker range=">= aspnetcore-2.2"
 
-## Content root
+# [Windows](#tab/windows)
 
-The content root is the base path to any content used by the app, such as views, [Razor Pages](xref:mvc/razor-pages/index), and static assets. By default, the content root is the same as application base path for the executable hosting the application. An alternative location for content root is specified with `WebHostBuilder`.
+ASP.NET Core provides the following server implementations:
 
-## Web root
+* *Kestrel* is a cross-platform web server. Kestrel is often run in a reverse proxy configuration using [IIS](https://www.iis.net/). In ASP.NET Core 2.0 or later, Kestrel can be run as a public-facing edge server exposed directly to the Internet.
+* *IIS HTTP Server* is a server for windows that uses IIS. With this server, the ASP.NET Core app and IIS run in the same process.
+* *HTTP.sys* is a server for Windows that isn't used with IIS.
 
-The web root of an application is the directory in the project containing public, static resources like CSS, JavaScript, and image files. By default, the static files middleware will only serve files from the web root directory and its sub-directories. See [working with static files](xref:fundamentals/static-files) for more info. The web root path defaults to */wwwroot*, but you can specify a different location using the `WebHostBuilder`.
+# [macOS](#tab/macos)
+
+ASP.NET Core provides the *Kestrel* cross-platform server implementation. In ASP.NET Core 2.0 or later, Kestrel can be run as a public-facing edge server exposed directly to the Internet. Kestrel is often run in a reverse proxy configuration with [Nginx](https://nginx.org) or [Apache](https://httpd.apache.org/).
+
+# [Linux](#tab/linux)
+
+ASP.NET Core provides the *Kestrel* cross-platform server implementation. In ASP.NET Core 2.0 or later, Kestrel can be run as a public-facing edge server exposed directly to the Internet. Kestrel is often run in a reverse proxy configuration with [Nginx](https://nginx.org) or [Apache](https://httpd.apache.org/).
+
+---
+
+::: moniker-end
+
+::: moniker range="< aspnetcore-2.2"
+
+# [Windows](#tab/windows)
+
+ASP.NET Core provides the following server implementations:
+
+* *Kestrel* is a cross-platform web server. Kestrel is often run in a reverse proxy configuration using [IIS](https://www.iis.net/). In ASP.NET Core 2.0 or later, Kestrel can be run as a public-facing edge server exposed directly to the Internet.
+* *HTTP.sys* is a server for Windows that isn't used with IIS.
+
+# [macOS](#tab/macos)
+
+ASP.NET Core provides the *Kestrel* cross-platform server implementation. In ASP.NET Core 2.0 or later, Kestrel can be run as a public-facing edge server exposed directly to the Internet. Kestrel is often run in a reverse proxy configuration with [Nginx](https://nginx.org) or [Apache](https://httpd.apache.org/).
+
+# [Linux](#tab/linux)
+
+ASP.NET Core provides the *Kestrel* cross-platform server implementation. In ASP.NET Core 2.0 or later, Kestrel can be run as a public-facing edge server exposed directly to the Internet. Kestrel is often run in a reverse proxy configuration with [Nginx](http://nginx.org) or [Apache](https://httpd.apache.org/).
+
+---
+
+::: moniker-end
+
+For more information, see <xref:fundamentals/servers/index>.
 
 ## Configuration
 
-ASP.NET Core uses a new configuration model for handling simple name-value pairs. The new configuration model is not based on `System.Configuration` or *web.config*; rather, it pulls from an ordered set of configuration providers. The built-in configuration providers support a variety of file formats (XML, JSON, INI) and environment variables to enable environment-based configuration. You can also write your own custom configuration providers.
+ASP.NET Core provides a configuration framework that gets settings as name-value pairs from an ordered set of configuration providers. There are built-in configuration providers for a variety of sources, such as *.json* files, *.xml* files, environment variables, and command-line arguments. You can also write custom configuration providers.
 
-For more information, see [Configuration](xref:fundamentals/configuration).
+For example, you could specify that configuration comes from *appsettings.json* and environment variables. Then when the value of *ConnectionString* is requested, the framework looks first in the *appsettings.json* file. If the value is found there but also in an environment variable, the value from the environment variable would take precedence.
+
+For managing confidential configuration data such as passwords, ASP.NET Core provides a [Secret Manager tool](xref:security/app-secrets). For production secrets, we recommend [Azure Key Vault](xref:security/key-vault-configuration).
+
+For more information, see <xref:fundamentals/configuration/index>.
+
+## Options
+
+Where possible, ASP.NET Core follows the *options pattern* for storing and retrieving configuration values. The options pattern uses classes to represent groups of related settings.
+
+For example, the following code sets WebSockets options:
+
+```csharp
+var options = new WebSocketOptions  
+{  
+   KeepAliveInterval = TimeSpan.FromSeconds(120),  
+   ReceiveBufferSize = 4096
+};  
+app.UseWebSockets(options);
+```
+
+For more information, see <xref:fundamentals/configuration/options>.
 
 ## Environments
 
-Environments, like "Development" and "Production", are a first-class notion in ASP.NET Core and can be set using environment variables.
+Execution environments, such as *Development*, *Staging*, and *Production*, are a first-class notion in ASP.NET Core. You can specify the environment an app is running in by setting the `ASPNETCORE_ENVIRONMENT` environment variable. ASP.NET Core reads that environment variable at app startup and stores the value in an `IHostingEnvironment` implementation. The environment object is available anywhere in the app via DI.
 
-For more information, see [Working with Multiple Environments](xref:fundamentals/environments).
+The following sample code from the `Startup` class configures the app to provide detailed error information only when it runs in development:
 
-## .NET Core vs. .NET Framework runtime
+[!code-csharp[](index/snapshots/2.x/Startup2.cs?highlight=3-6)]
 
-An ASP.NET Core application can target the .NET Core or .NET Framework runtime. For more information, see [Choosing between .NET Core and .NET Framework](https://docs.microsoft.com/dotnet/articles/standard/choosing-core-framework-server).
+For more information, see <xref:fundamentals/environments>.
 
-## Additional information
+## Logging
 
-See also the following topics:
+ASP.NET Core supports a logging API that works with a variety of built-in and third-party logging providers. Available providers include the following:
 
-- [Error Handling](xref:fundamentals/error-handling)
-- [File Providers](xref:fundamentals/file-providers)
-- [Globalization and localization](xref:fundamentals/localization)
-- [Logging](xref:fundamentals/logging)
-- [Managing Application State](xref:fundamentals/app-state)
+* Console
+* Debug
+* Event Tracing on Windows
+* Windows Event Log
+* TraceSource
+* Azure App Service
+* Azure Application Insights
+
+Write logs from anywhere in an app's code by getting an `ILogger` object from DI and calling log methods.
+
+Here's sample code that uses an `ILogger` object, with constructor injection and the logging method calls highlighted.
+
+[!code-csharp[](index/snapshots/2.x/TodoController.cs?highlight=5,13,17)]
+
+The `ILogger` interface lets you pass any number of fields to the logging provider. The fields are commonly used to construct a message string, but the provider can also send them as separate fields to a data store. This feature makes it possible for logging providers to implement [semantic logging, also known as structured logging](https://softwareengineering.stackexchange.com/questions/312197/benefits-of-structured-logging-vs-basic-logging).
+
+For more information, see <xref:fundamentals/logging/index>.
+
+## Routing
+
+A *route* is a URL pattern that is mapped to a handler. The handler is typically a Razor page, an action method in an MVC controller, or a middleware. ASP.NET Core routing gives you control over the URLs used by your app.
+
+For more information, see <xref:fundamentals/routing>.
+
+## Error handling
+
+ASP.NET Core has built-in features for handling errors, such as:
+
+* A developer exception page
+* Custom error pages
+* Static status code pages
+* Startup exception handling
+
+For more information, see <xref:fundamentals/error-handling>.
+
+## Make HTTP requests
+
+An implementation of `IHttpClientFactory` is available for creating `HttpClient` instances. The factory:
+
+* Provides a central location for naming and configuring logical `HttpClient` instances. For example, a *github* client can be registered and configured to access GitHub. A default client can be registered for other purposes.
+* Supports registration and chaining of multiple delegating handlers to build an outgoing request middleware pipeline. This pattern is similar to the inbound middleware pipeline in ASP.NET Core. The pattern provides a mechanism to manage cross-cutting concerns around HTTP requests, including caching, error handling, serialization, and logging.
+* Integrates with *Polly*, a popular third-party library for transient fault handling.
+* Manages the pooling and lifetime of underlying `HttpClientMessageHandler` instances to avoid common DNS problems that occur when manually managing `HttpClient` lifetimes.
+* Adds a configurable logging experience (via `ILogger`) for all requests sent through clients created by the factory.
+
+For more information, see <xref:fundamentals/http-requests>.
+
+## Content root
+
+The content root is the base path to any private content used by the app, such as its Razor files. By default, the content root is the base path for the executable hosting the app. An alternative location can be specified when [building the host](#host).
+
+::: moniker range=">= aspnetcore-3.0"
+
+For more information, see [Content root](xref:fundamentals/host/generic-host#content-root).
+
+::: moniker-end
+
+::: moniker range="< aspnetcore-3.0"
+
+For more information, see [Content root](xref:fundamentals/host/web-host#content-root).
+
+::: moniker-end
+
+## Web root
+
+The web root (also known as *webroot*) is the base path to public, static resources, such as CSS, JavaScript, and image files. The static files middleware will only serve files from the web root directory (and sub-directories) by default. The web root path defaults to *{Content Root}/wwwroot*, but a different location can be specified when [building the host](#host).
+
+In Razor (*.cshtml*) files, the tilde-slash `~/` points to the web root. Paths beginning with `~/` are referred to as virtual paths.
+
+For more information, see <xref:fundamentals/static-files>.

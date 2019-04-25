@@ -1,10 +1,7 @@
-﻿using CustomModelBindingSample.Data;
-using Microsoft.AspNetCore.Mvc.Internal;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 using System.Threading.Tasks;
+using CustomModelBindingSample.Data;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace CustomModelBindingSample.Binders
 {
@@ -24,20 +21,15 @@ namespace CustomModelBindingSample.Binders
                 throw new ArgumentNullException(nameof(bindingContext));
             }
 
-            // Specify a default argument name if none is set by ModelBinderAttribute
-            var modelName = bindingContext.BinderModelName;
-            if (string.IsNullOrEmpty(modelName))
-            {
-                modelName = "authorId";
-            }
-
+            var modelName = bindingContext.ModelName;
+            
             // Try to fetch the value of the argument by name
             var valueProviderResult =
                 bindingContext.ValueProvider.GetValue(modelName);
 
             if (valueProviderResult == ValueProviderResult.None)
             {
-                return TaskCache.CompletedTask;
+                return Task.CompletedTask;
             }
 
             bindingContext.ModelState.SetModelValue(modelName,
@@ -48,7 +40,7 @@ namespace CustomModelBindingSample.Binders
             // Check if the argument value is null or empty
             if (string.IsNullOrEmpty(value))
             {
-                return TaskCache.CompletedTask;
+                return Task.CompletedTask;
             }
 
             int id = 0;
@@ -56,16 +48,16 @@ namespace CustomModelBindingSample.Binders
             {
                 // Non-integer arguments result in model state errors
                 bindingContext.ModelState.TryAddModelError(
-                                        bindingContext.ModelName,
+                                        modelName,
                                         "Author Id must be an integer.");
-                return TaskCache.CompletedTask;
+                return Task.CompletedTask;
             }
 
             // Model will be null if not found, including for 
             // out of range id values (0, -3, etc.)
             var model = _db.Authors.Find(id);
             bindingContext.Result = ModelBindingResult.Success(model);
-            return TaskCache.CompletedTask;
+            return Task.CompletedTask;
         }
     }
     #endregion

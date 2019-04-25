@@ -1,1 +1,1 @@
-This tutorial teaches ASP.NET Core MVC with controllers and views. Razor Pages is a new alternative in ASP.NET Core 2.0, a page-based programming model that makes building web UI easier and more productive. For a Razor version of this tutorial, see [Razor Pages Tutorial](xref:mvc/razor-pages/index). 
+This tutorial teaches ASP.NET Core MVC web development with controllers and views. If you're new to ASP.NET Core web development, consider the [Razor Pages](xref:tutorials/razor-pages/razor-pages-start) version of this tutorial, which provides an easier starting point.

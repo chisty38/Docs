@@ -23,8 +23,9 @@ namespace RazorPagesMovie.Pages.Movies
             _context = context;
         }
 
-        public List<Movie> Movie;
-        public SelectList Genres;
+        public IList<Movie> Movie { get; set; }
+        public string SearchString { get; set; }
+        public SelectList Genres { get; set; }
         public string MovieGenre { get; set; }
         #endregion
 
@@ -35,14 +36,15 @@ namespace RazorPagesMovie.Pages.Movies
             var movies = from m in _context.Movie
                          select m;
 
-        #region snippet_SearchNull
+            #region snippet_SearchNull
             if (!String.IsNullOrEmpty(searchString))
             {
                 movies = movies.Where(s => s.Title.Contains(searchString));
             }
-        #endregion
+            #endregion
 
             Movie = await movies.ToListAsync();
+            SearchString = searchString;
         }
         #endregion
 #endif
@@ -75,6 +77,7 @@ namespace RazorPagesMovie.Pages.Movies
             Genres = new SelectList(await genreQuery.Distinct().ToListAsync());
             #endregion
             Movie = await movies.ToListAsync();
+            SearchString = searchString;
         }
         #endregion
 #endif

@@ -1,58 +1,49 @@
 ---
 title: WebSockets support in ASP.NET Core
-author: tdykstra
-description: What is WebSockets support in ASP.NET Core and how to use it.
-keywords: ASP.NET Core, WebSockets
+author: rick-anderson
+description: Learn how to get started with WebSockets in ASP.NET Core.
+monikerRange: '>= aspnetcore-1.1'
 ms.author: tdykstra
-manager: wpickett
-ms.date: 03/25/2017
-ms.topic: article
-ms.assetid: 0e0fedcd-a7b4-4479-8ae0-36eab0229d7e
-ms.technology: aspnet
-ms.prod: aspnet-core
+ms.custom: mvc
+ms.date: 01/17/2019
 uid: fundamentals/websockets
 ---
-
-# Introduction to WebSockets in ASP.NET Core
+# WebSockets support in ASP.NET Core
 
 By [Tom Dykstra](https://github.com/tdykstra) and [Andrew Stanton-Nurse](https://github.com/anurse)
 
-This article explains how to get started with WebSockets in ASP.NET Core. [WebSocket](https://en.wikipedia.org/wiki/WebSocket) is a protocol that enables two-way persistent communication channels over TCP connections. It is used for applications such as chat, stock tickers, games, anywhere you want real-time functionality in a web application.
+This article explains how to get started with WebSockets in ASP.NET Core. [WebSocket](https://wikipedia.org/wiki/WebSocket) ([RFC 6455](https://tools.ietf.org/html/rfc6455)) is a protocol that enables two-way persistent communication channels over TCP connections. It's used in apps that benefit from fast, real-time communication, such as chat, dashboard, and game apps.
 
-[View or download sample code](https://github.com/aspnet/Docs/tree/master/aspnetcore/fundamentals/websockets/sample). See the [Next Steps](#next-steps) section for more information.
-
+[View or download sample code](https://github.com/aspnet/AspNetCore.Docs/tree/master/aspnetcore/fundamentals/websockets/samples) ([how to download](xref:index#how-to-download-a-sample)). See the [Next steps](#next-steps) section for more information.
 
 ## Prerequisites
 
-* ASP.NET Core 1.1 (does not run on 1.0)
-* Any OS that ASP.NET Core runs on:
+* ASP.NET Core 1.1 or later
+* Any OS that supports ASP.NET Core:
   
-  * Windows 7 / Windows Server 2008 and later
+  * Windows 7 / Windows Server 2008 or later
   * Linux
   * macOS
-
-* **Exception**: If your app runs on Windows with IIS, or with WebListener, you must use:
+  
+* If the app runs on Windows with IIS:
 
   * Windows 8 / Windows Server 2012 or later
   * IIS 8 / IIS 8 Express
-  * WebSocket must be enabled in IIS
+  * WebSockets must be enabled (See the [IIS/IIS Express support](#iisiis-express-support) section.).
+  
+* If the app runs on [HTTP.sys](xref:fundamentals/servers/httpsys):
 
-* For supported browsers, see http://caniuse.com/#feat=websockets.
+  * Windows 8 / Windows Server 2012 or later
 
-## When to use it
+* For supported browsers, see https://caniuse.com/#feat=websockets.
 
-Use WebSockets when you need to work directly with a socket connection. For example, you might need the best possible performance for a real-time game.
+## When to use WebSockets
 
-[ASP.NET SignalR](https://docs.microsoft.com/aspnet/signalr/overview/getting-started/introduction-to-signalr) provides a richer application model for real-time functionality, but it runs only on ASP.NET, not ASP.NET Core. A Core version of SignalR is under development; to follow its progress, see the [GitHub repository for SignalR Core](https://github.com/aspnet/SignalR).
+Use WebSockets to work directly with a socket connection. For example, use WebSockets for the best possible performance with a real-time game.
 
-If you don't want to wait for SignalR Core, you can use WebSockets directly now. But you might have to develop features that SignalR would provide, such as:
+[ASP.NET Core SignalR](xref:signalr/introduction) is a library that simplifies adding real-time web functionality to apps. It uses WebSockets whenever possible.
 
-* Support for a broader range of browser versions by using automatic fallback to alternative transport methods.
-* Automatic reconnection when a connection drops.
-* Support for clients calling methods on the server or vice versa.
-* Support for scaling to multiple servers.
-
-## How to use it
+## How to use WebSockets
 
 * Install the [Microsoft.AspNetCore.WebSockets](https://www.nuget.org/packages/Microsoft.AspNetCore.WebSockets/) package.
 * Configure the middleware.
@@ -61,43 +52,165 @@ If you don't want to wait for SignalR Core, you can use WebSockets directly now.
 
 ### Configure the middleware
 
-Add the WebSockets middleware in the `Configure` method of the `Startup` class.
+Add the WebSockets middleware in the `Configure` method of the `Startup` class:
 
-[!code-csharp[](websockets/sample/Startup.cs?name=UseWebSockets)]
+::: moniker range=">= aspnetcore-2.0"
+
+[!code-csharp[](websockets/samples/2.x/WebSocketsSample/Startup.cs?name=UseWebSockets)]
+
+::: moniker-end
+
+::: moniker range="< aspnetcore-2.0"
+
+[!code-csharp[](websockets/samples/1.x/WebSocketsSample/Startup.cs?name=UseWebSockets)]
+
+::: moniker-end
+
+::: moniker range="< aspnetcore-2.2"
 
 The following settings can be configured:
 
-* `KeepAliveInterval` - How frequently to send "ping" frames to the client, to ensure proxies keep the connection open.
-* `ReceiveBufferSize` - The size of the buffer used to receive data. Only advanced users would need to change this, for performance tuning based on the size of their data.
+* `KeepAliveInterval` - How frequently to send "ping" frames to the client to ensure proxies keep the connection open. The default is two minutes.
+* `ReceiveBufferSize` - The size of the buffer used to receive data. Advanced users may need to change this for performance tuning based on the size of the data. The default is 4 KB.
 
-[!code-csharp[](websockets/sample/Startup.cs?name=UseWebSocketsOptions)]
+::: moniker-end
+
+::: moniker range=">= aspnetcore-2.2"
+
+The following settings can be configured:
+
+* `KeepAliveInterval` - How frequently to send "ping" frames to the client to ensure proxies keep the connection open. The default is two minutes.
+* `ReceiveBufferSize` - The size of the buffer used to receive data. Advanced users may need to change this for performance tuning based on the size of the data. The default is 4 KB.
+* `AllowedOrigins` - A list of allowed Origin header values for WebSocket requests. By default, all origins are allowed. See "WebSocket origin restriction" below for details.
+
+::: moniker-end
+
+::: moniker range=">= aspnetcore-2.0"
+
+[!code-csharp[](websockets/samples/2.x/WebSocketsSample/Startup.cs?name=UseWebSocketsOptions)]
+
+::: moniker-end
+
+::: moniker range="< aspnetcore-2.0"
+
+[!code-csharp[](websockets/samples/1.x/WebSocketsSample/Startup.cs?name=UseWebSocketsOptions)]
+
+::: moniker-end
 
 ### Accept WebSocket requests
 
 Somewhere later in the request life cycle (later in the `Configure` method or in an MVC action, for example) check if it's a WebSocket request and accept the WebSocket request.
 
-This example is from later in the `Configure` method.
+The following example is from later in the `Configure` method:
 
-[!code-csharp[](websockets/sample/Startup.cs?name=AcceptWebSocket&highlight=7)]
+::: moniker range=">= aspnetcore-2.0"
+
+[!code-csharp[](websockets/samples/2.x/WebSocketsSample/Startup.cs?name=AcceptWebSocket&highlight=7)]
+
+::: moniker-end
+
+::: moniker range="< aspnetcore-2.0"
+
+[!code-csharp[](websockets/samples/1.x/WebSocketsSample/Startup.cs?name=AcceptWebSocket&highlight=7)]
+
+::: moniker-end
 
 A WebSocket request could come in on any URL, but this sample code only accepts requests for `/ws`.
 
 ### Send and receive messages
 
-The `AcceptWebSocketAsync` method upgrades the TCP connection to a WebSocket connection and gives you a [WebSocket](https://docs.microsoft.com/dotnet/core/api/system.net.websockets.websocket) object. Use the WebSocket object to send and receive messages.
+The `AcceptWebSocketAsync` method upgrades the TCP connection to a WebSocket connection and provides a [WebSocket](/dotnet/core/api/system.net.websockets.websocket) object. Use the `WebSocket` object to send and receive messages.
 
-The code shown earlier that accepts the WebSocket request passes the `WebSocket` object to an `Echo` method; here's the `Echo` method. The code receives a message and immediately sends back the same message. It stays in a loop doing that until the client closes the connection. 
+The code shown earlier that accepts the WebSocket request passes the `WebSocket` object to an `Echo` method. The code receives a message and immediately sends back the same message. Messages are sent and received in a loop until the client closes the connection:
 
-[!code-csharp[](websockets/sample/Startup.cs?name=Echo)]
+::: moniker range=">= aspnetcore-2.0"
 
-When you accept the WebSocket before beginning this loop, the middleware pipeline ends.  Upon closing the socket, the pipeline unwinds. That is, the request stops moving forward in the pipeline when you accept a WebSocket, just as it would when you hit an MVC action, for example.  But when you finish this loop and close the socket, the request proceeds back up the pipeline.
+[!code-csharp[](websockets/samples/2.x/WebSocketsSample/Startup.cs?name=Echo)]
+
+::: moniker-end
+
+::: moniker range="< aspnetcore-2.0"
+
+[!code-csharp[](websockets/samples/1.x/WebSocketsSample/Startup.cs?name=Echo)]
+
+::: moniker-end
+
+When accepting the WebSocket connection before beginning the loop, the middleware pipeline ends. Upon closing the socket, the pipeline unwinds. That is, the request stops moving forward in the pipeline when the WebSocket is accepted. When the loop is finished and the socket is closed, the request proceeds back up the pipeline.
+
+::: moniker range=">= aspnetcore-2.2"
+
+### Handle client disconnects
+
+The server is not automatically informed when the client disconnects due to loss of connectivity. The server receives a disconnect message only if the client sends it, which can't be done if the internet connection is lost. If you want to take some action when that happens, set a timeout after nothing is received from the client within a certain time window.
+
+If the client isn't always sending messages and you don't want to timeout just because the connection goes idle, have the client use a timer to send a ping message every X seconds. On the server, if a message hasn't arrived within 2\*X seconds after the previous one, terminate the connection and report that the client disconnected. Wait for twice the expected time interval to leave extra time for network delays that might hold up the ping message.
+
+### WebSocket origin restriction
+
+The protections provided by CORS don't apply to WebSockets. Browsers do **not**:
+
+* Perform CORS pre-flight requests.
+* Respect the restrictions specified in `Access-Control` headers when making WebSocket requests.
+
+However, browsers do send the `Origin` header when issuing WebSocket requests. Applications should be configured to validate these headers to ensure that only WebSockets coming from the expected origins are allowed.
+
+If you're hosting your server on "https://server.com" and hosting your client on "https://client.com", add "https://client.com" to the `AllowedOrigins` list for WebSockets to verify.
+
+[!code-csharp[](websockets/samples/2.x/WebSocketsSample/Startup.cs?name=UseWebSocketsOptionsAO&highlight=6-7)]
+
+> [!NOTE]
+> The `Origin` header is controlled by the client and, like the `Referer` header, can be faked. Do **not** use these headers as an authentication mechanism.
+
+::: moniker-end
+
+## IIS/IIS Express support
+
+Windows Server 2012 or later and Windows 8 or later with IIS/IIS Express 8 or later has support for the WebSocket protocol.
+
+> [!NOTE]
+> WebSockets are always enabled when using IIS Express.
+
+### Enabling WebSockets on IIS
+
+To enable support for the WebSocket protocol on Windows Server 2012 or later:
+
+> [!NOTE]
+> These steps are not required when using IIS Express
+
+1. Use the **Add Roles and Features** wizard from the **Manage** menu or the link in **Server Manager**.
+1. Select **Role-based or Feature-based Installation**. Select **Next**.
+1. Select the appropriate server (the local server is selected by default). Select **Next**.
+1. Expand **Web Server (IIS)** in the **Roles** tree, expand **Web Server**, and then expand **Application Development**.
+1. Select **WebSocket Protocol**. Select **Next**.
+1. If additional features aren't needed, select **Next**.
+1. Select **Install**.
+1. When the installation completes, select **Close** to exit the wizard.
+
+To enable support for the WebSocket protocol on Windows 8 or later:
+
+> [!NOTE]
+> These steps are not required when using IIS Express
+
+1. Navigate to **Control Panel** > **Programs** > **Programs and Features** > **Turn Windows features on or off** (left side of the screen).
+1. Open the following nodes: **Internet Information Services** > **World Wide Web Services** > **Application Development Features**.
+1. Select the **WebSocket Protocol** feature. Select **OK**.
+
+### Disable WebSocket when using socket.io on Node.js
+
+If using the WebSocket support in [socket.io](https://socket.io/) on [Node.js](https://nodejs.org/), disable the default IIS WebSocket module using the `webSocket` element in *web.config* or *applicationHost.config*. If this step isn't performed, the IIS WebSocket module attempts to handle the WebSocket communication rather than Node.js and the app.
+
+```xml
+<system.webServer>
+  <webSocket enabled="false" />
+</system.webServer>
+```
 
 ## Next steps
 
-The [sample application](https://github.com/aspnet/Docs/tree/master/aspnetcore/fundamentals/websockets/sample) that accompanies this article is a simple echo application. It has a web page that makes WebSocket connections, and the server just resends back to the client any messages it receives. Run it from a command prompt (it's not set up to run from Visual Studio with IIS Express) and navigate to http://localhost:5000. The web page shows connection status at the upper left:
+The [sample app](https://github.com/aspnet/AspNetCore.Docs/tree/master/aspnetcore/fundamentals/websockets/samples) that accompanies this article is an echo app. It has a web page that makes WebSocket connections, and the server resends any messages it receives back to the client. Run the app from a command prompt (it's not set up to run from Visual Studio with IIS Express) and navigate to http://localhost:5000. The web page shows the connection status in the upper left:
 
 ![Initial state of web page](websockets/_static/start.png)
 
-Select **Connect** to send a WebSocket request to the URL shown.  Enter a test message and select **Send**. When done, select **Close Socket**. The **Communication Log** section reports each open, send, and close action as it happens.
+Select **Connect** to send a WebSocket request to the URL shown. Enter a test message and select **Send**. When done, select **Close Socket**. The **Communication Log** section reports each open, send, and close action as it happens.
 
 ![Initial state of web page](websockets/_static/end.png)

@@ -21,8 +21,8 @@ namespace FiltersSample.Controllers
         }
 
         #region snippet_TypeFilter
-        [TypeFilter(typeof(AddHeaderAttribute),
-            Arguments = new object[] { "Author", "Steve Smith (@ardalis)" })]
+        [TypeFilter(typeof(LogConstantFilter),
+            Arguments = new object[] { "Method 'Hi' called" })]
         public IActionResult Hi(string name)
         {
             return Content($"Hi {name}");
@@ -35,7 +35,7 @@ namespace FiltersSample.Controllers
         public IActionResult CultureFromRouteData()
         {
             return Content($"CurrentCulture:{CultureInfo.CurrentCulture.Name},"
-                + "CurrentUICulture:{CultureInfo.CurrentUICulture.Name}");
+                + $"CurrentUICulture:{CultureInfo.CurrentUICulture.Name}");
         }
         #endregion
     }

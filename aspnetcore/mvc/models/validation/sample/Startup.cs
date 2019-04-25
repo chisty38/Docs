@@ -1,38 +1,47 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using MVCMovie.Controllers;
+﻿//#define DisableValidation
 
-namespace MVCMovie
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using Microsoft.Extensions.DependencyInjection;
+using ValidationSample.Controllers;
+using ValidationSample.Data;
+using ValidationSample;
+using ValidationSample.Attributes;
+
+namespace ValidationSample
 {
     public class Startup
     {
-        public Startup(IHostingEnvironment env)
-        {
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(env.ContentRootPath)
-                .AddEnvironmentVariables();
-
-            Configuration = builder.Build();
-        }
-
-        public IConfigurationRoot Configuration { get; }
-
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton(new MVCMovieContext());
+            services.AddSingleton(new MovieContext());
             services.AddSingleton<IUserRepository>(new UserRepository());
-            services.AddMvc(options => options.MaxModelValidationErrors = 50);
+#if DisableValidation
+            #region snippet_DisableValidation
+            // There is only one `IObjectModelValidator` object,
+            // so AddSingleton replaces the default one.
+            services.AddSingleton<IObjectModelValidator>(new NullObjectModelValidator());
+            #endregion
+#endif
+            #region snippet_MaxModelValidationErrors
+            services.AddMvc(options => 
+                {
+                    options.MaxModelValidationErrors = 50;
+                    options.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(
+                        (_) => "The field is required.");
+                })
+                .SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddSingleton
+                <IValidationAttributeAdapterProvider, 
+                 CustomValidationAttributeAdapterProvider>();
+            #endregion
         }
 
-        public void Configure(IApplicationBuilder app, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app)
         {
-            loggerFactory
-                .AddConsole(Configuration.GetSection("Logging"))
-                .AddDebug();
-
             app.UseStaticFiles();
             app.UseMvc(routes => routes.MapRoute(
                 name: "default",

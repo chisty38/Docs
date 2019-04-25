@@ -1188,7 +1188,7 @@
                 // Support: IE8, Opera 11-12.16
                 // Nothing should be selected when empty strings follow ^= or $= or *=
                 // The test attribute must be unknown in Opera but "safe" for WinRT
-                // http://msdn.microsoft.com/en-us/library/ie/hh465388.aspx#attribute_section
+                // http://msdn.microsoft.com/library/ie/hh465388.aspx#attribute_section
                 if ( div.querySelectorAll("[msallowcapture^='']").length ) {
                     rbuggyQSA.push( "[*^$]=" + whitespace + "*(?:''|\"\")" );
                 }
@@ -2627,7 +2627,7 @@
     
     // Support: IE<8
     // Prevent attribute/property "interpolation"
-    // http://msdn.microsoft.com/en-us/library/ms536429%28VS.85%29.aspx
+    // http://msdn.microsoft.com/library/ms536429%28VS.85%29.aspx
     if ( !assert(function( div ) {
         div.innerHTML = "<a href='#'></a>";
         return div.firstChild.getAttribute("href") === "#" ;
@@ -4002,7 +4002,7 @@
                 this.each( function() {
     
                     // First, attempt to store a copy or reference of any
-                    // data that might've been store with a camelCased key.
+                    // data that might have been store with a camelCased key.
                     var data = dataUser.get( this, camelKey );
     
                     // For HTML5 data-* attribute interop, we have to
@@ -5857,7 +5857,7 @@
     
         // Swappable if display is none or starts with table
         // except "table", "table-cell", or "table-caption"
-        // See here for display values: https://developer.mozilla.org/en-US/docs/CSS/display
+        // See here for display values: https://developer.mozilla.org/docs/CSS/display
         rdisplayswap = /^(none|table(?!-c[ea]).+)/,
     
         cssShow = { position: "absolute", visibility: "hidden", display: "block" },
